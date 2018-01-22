@@ -50,7 +50,9 @@ couples <- data_couples %>%
         ddn = as.Date(ddn, format = '%d/%m/%Y')
     )
 
-couples <- lapply(couples, replace_char) %>% as.data.frame()
+couples <- lapply(couples, replace_char) %>% 
+    as.data.frame() %>%
+    dplyr::arrange(id)
 
 summary(couples)
 sapply(couples, class)
