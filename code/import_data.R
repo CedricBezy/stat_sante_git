@@ -16,6 +16,15 @@ library(dplyr)
 
 rm(list = ls())
 
+replace_char <- function(x){
+    if(is.character(x)){
+        x <- gsub('[éèê]', 'e', x)
+        x <- gsub('[àâ]', 'a', x)
+        x <- gsub('[ù]', 'u', x)
+    }
+    return(x)
+}
+
 data_couples <- read.csv(
     'stat_sante_copy/data/couples.csv',
     na.strings = c('.', ''),
@@ -38,12 +47,12 @@ couples <- data_couples %>%
                         levels = c(1, 0)),
         dconsultation = as.Date(dconsultation, format = '%d/%m/%Y'),
         dconception = as.Date(dconception, format = '%d/%m/%Y'),
-        ddn = as.Date(ddn, format = '%d/%m/%Y'),
-        patho_h = gsub('[éèê]', 'e', patho_h),
-        patho_f = gsub('[éèê]', 'e', patho_f)
+        ddn = as.Date(ddn, format = '%d/%m/%Y')
     )
+
+couples <- lapply(couples, replace_char) %>% as.data.frame()
 
 summary(couples)
 sapply(couples, class)
 
-save(couples, file = 'stat_sante_copy/rdata/couples.RData')
+save(couples, file = 'stat_sante_copy/data/couples.RData')
