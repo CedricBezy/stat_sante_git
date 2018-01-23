@@ -49,7 +49,7 @@ box_age <- ggplot(data = df_age) +
         na.rm = TRUE,
         alpha = 0.5
     ) +
-    scale_color_manual(values = c("Homme"= "#00BFC4", "Femmme"="#F8766D"))
+    scale_fill_manual(values = c("#00BFC4", "#F8766D"))
 box_age
 
 ##===============================================
