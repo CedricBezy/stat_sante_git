@@ -65,5 +65,12 @@ for(i in 1:length(v_namesquali)){
     print(.make_bar_plot(var_name, v_titlequali[i]))
 }
 
+for(iname in v_namesquali){
+    x <- couples[[iname]]
+    y <- couples$enfant
+    print(iname)
+    print(chisq.test(table(x, y)))
+}
 
 
+chisq.test(couples$age_f, couples$enfant)
