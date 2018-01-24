@@ -11,6 +11,17 @@ rm(list = ls())
 
 library(dplyr)
 library(tibble)
+library(scales)
+
+##==================================================
+# palette_enfant
+##==================================================
+
+brewer_pal(palette = "Greens", direction = 1)(9)
+# [1] "#F7FCF5" "#E5F5E0" "#C7E9C0" "#A1D99B" "#74C476" "#41AB5D"
+# [7] "#238B45" "#006D2C" "#00441B"
+
+palette_enfant <- c("Oui" = "#A1D99B", "Non" = "#238B45")
 
 ##==================================================
 # functions
@@ -57,24 +68,83 @@ couples <- couples %>%
         enfant = factor(enfant,
                         levels = c(1, 0),
                         labels = c("Oui", "Non")),
+        
+        # format date
         dconsultation = as.Date(dconsultation, format = '%d/%m/%Y'),
         dconception = as.Date(dconception, format = '%d/%m/%Y'),
         ddn = as.Date(ddn, format = '%d/%m/%Y'),
+        
+        # diplome
         diplome_h = ordered(diplome_h,
                             levels = c('Bac-', 'Bac', 'Bac+'),
                             labels = c('Bac--', 'Bac', 'Bac++')),
         diplome_f = ordered(diplome_f,
                             levels = c('Bac-', 'Bac', 'Bac+'),
                             labels = c('Bac--', 'Bac', 'Bac++')),
+        
+        spermo = ordered(spermo,
+                         levels = c('normal', 'anormal', 'azoo')),
         cryptorchidie = ordered(cryptorchidie,
                                 levels = c('Oui', 'Non')),
-        fecondite = ordered(fecondite,
-                            levels = c('primaire', 'secondaire')),
-        traitement = factor(traitement),
-        spermo = factor(spermo),
-        bh_f = factor(bh_f),
-        ct_f = factor(ct_f)
+        bh_f = ordered(bh_f,
+                       levels = c('normal', 'anormal')),
+        ct_f = factor(
+            ct_f,
+            levels = c("ovulation", "dysovulation", "anovulation")
+        ),
+        fecondite = ordered(
+            fecondite,
+            levels = c('primaire', 'secondaire')
+        ),
+        traitement = factor(
+            traitement,
+            levels = c("ICSI", "IAC", "FIV", "IAD", "Medical", "Aucun")
+        )
+    ) %>%
+    dplyr::filter(
+        !is.na(diplome_h)
     )
+
+##==================================================
+# Duree Infertilite
+##==================================================
+
+diff_age <- couples$age_h - couples$age_f
+
+couples <- couples %>% add_column(diff_age, .after = "fecondite")
+
+
+duree_infertilite_class <- with(couples, {
+    cut(duree_infertilite,
+        breaks = c(0, 24, max(duree_infertilite, na.rm = TRUE) + 1),
+        labels = c("inf_24", "24_sup"),
+        include.lowest = FALSE,
+        right = TRUE,
+        ordered_result = TRUE
+    )
+})
+couples <- couples %>% add_column(duree_infertilite_class, .after = "duree_infertilite")
+
+# BMI
+# <16 : Anorexie ; 
+# 16 < Maigreur < 18,5 ;
+# 18,5< normal < 25 ;
+# 25< surpoids < 30 ; 
+# 30 < obese < 40 ; 
+# >40 massive
+
+bmi_h_class <- with(couples, {
+    cut(bmi_h,
+        breaks = c(10, 16, 18.5, 25, 30, 40, 60),
+        labels = c("Anorexie", "Maigreur", "Normal", "Surpoids", "Obese", "Massive"),
+        include.lowest = FALSE,
+        right = TRUE,
+        ordered_result = TRUE
+    )
+})
+couples <- couples %>% add_column(bmi_h_class, .after = "bmi_h")
+
+
 
 ##==================================================
 # Pathologie Homme
@@ -240,3 +310,7 @@ sapply(couples, class)
 
 save(couples, file = 'stat_sante_copy/data/couples.RData')
 save(couples, file = 'stat_sante_git/data/couples.RData')
+
+save(palette_enfant, file = 'stat_sante_copy/data/palette_enfant.RData')
+save(palette_enfant, file = 'stat_sante_git/data/palette_enfant.RData')
+

@@ -1,7 +1,7 @@
 ##---------------------------------------
 # projet stat pour la sante
 # 22 / 01 / 2017
-# Cedric B
+# 
 ##---------------------------------------
 
 ##===============================================
@@ -17,6 +17,7 @@ library(ggplot2)
 
 # load couples
 load('stat_sante_copy/data/couples.RData')
+load('stat_sante_copy/data/palette_enfant.RData')
 
 ##===============================================
 # 

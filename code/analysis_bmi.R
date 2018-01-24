@@ -15,8 +15,9 @@ library(tibble)
 library(tidyr)
 library(ggplot2)
 
-# load couples
+# load couples and palette_enfant
 load('stat_sante_copy/data/couples.RData')
+load('stat_sante_copy/data/palette_enfant.RData')
 
 ##===============================================
 # Boxplot
@@ -33,10 +34,19 @@ df_bmi <- couples %>%
     )
 
 
+dens_bmi_enfant <- ggplot(data = df_bmi,
+                          mapping = aes(values, fill = enfant)) +
+    geom_density(
+        na.rm = TRUE,
+        alpha = 0.4
+    ) +
+    scale_fill_manual(values = c("#00BFC4", "#F8766D"))
+dens_bmi_enfant 
+
+
 box_bmi_enfant <- ggplot(data = df_bmi) +
     geom_boxplot(
         mapping = aes(x = genre, y = values, fill = enfant),
         na.rm = TRUE
     )
 box_bmi_enfant
-
