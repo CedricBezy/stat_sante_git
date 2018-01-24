@@ -69,7 +69,11 @@ couples <- couples %>%
         cryptorchidie = ordered(cryptorchidie,
                                 levels = c('Oui', 'Non')),
         fecondite = ordered(fecondite,
-                            levels = c('primaire', 'secondaire'))
+                            levels = c('primaire', 'secondaire')),
+        traitement = factor(traitement),
+        spermo = factor(spermo),
+        bh_f = factor(bh_f),
+        ct_f = factor(ct_f)
     )
 
 ##==================================================
