@@ -89,15 +89,18 @@ make_summary <- function(name)
     return(res_df)
 }
 
+
 make_bar_plot <- function(var_name, var_label = var_name, empile = FALSE)
 {
     # make data
     df_plot <- make_summary(var_name)
     tab_var <- unique(df_plot[[var_name]])
-    x_labels <- paste(
-        unique(df_plot[[var_name]]),
-        paste0("(", unique(df_plot$eff_tot), ")")
+    # Labels
+    moda_eff <- paste(
+        df_plot[[var_name]],
+        paste0("(", df_plot$eff_tot, ")")
     )
+    x_labels <- unique(moda_eff)
     ## Khi.square test
     khi2 <- chisq.test(
         table(couples[[var_name]], couples$enfant)
@@ -107,7 +110,6 @@ make_bar_plot <- function(var_name, var_label = var_name, empile = FALSE)
         digits = 3,
         format = ifelse(khi2$p.value < 0.001, "e", "f")
     )
-    print(khi2)
     
     ## Plot
     if(empile){
@@ -127,7 +129,7 @@ make_bar_plot <- function(var_name, var_label = var_name, empile = FALSE)
                 labels = x_labels
             )
     }else{
-        df_plot[["x_labels"]] <- factor(x_labels, levels = unique(x_labels))
+        df_plot[["x_labels"]] <- factor(moda_eff, levels = unique(x_labels))
         resplot <- ggplot(mapping = aes_string("enfant", "pct", fill = "enfant"),
                           data = df_plot) +
             facet_wrap(~x_labels) +
