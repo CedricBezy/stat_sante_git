@@ -16,8 +16,9 @@ library(tidyr)
 library(ggplot2)
 library(scales)
 
-# load couples
+# load couples and palette_enfant
 load('stat_sante_copy/data/couples.RData')
+load('stat_sante_copy/data/palette_enfant.RData')
 
 ##===============================================
 # Boxplot
@@ -45,11 +46,11 @@ dens_age
 
 box_age <- ggplot(data = df_age) +
     geom_boxplot(
-        mapping = aes(genre, values, fill = genre),
+        mapping = aes(y = values, fill = enfant),
         na.rm = TRUE,
-        alpha = 0.5
+        alpha = 0.7
     ) +
-    scale_fill_manual(values = c("#00BFC4", "#F8766D"))
+    scale_fill_manual(values = c("#00BA38", "#F8766D"))
 box_age
 
 ##===============================================
