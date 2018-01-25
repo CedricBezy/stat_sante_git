@@ -24,6 +24,8 @@ load('stat_sante_copy/data/palette_enfant.RData')
 # Boxplot
 ##===============================================
 
+
+
 df_age <- couples %>%
     dplyr::select(id, enfant, contains("age")) %>%
     tidyr::gather(variable, values, -c(id, enfant)) %>%

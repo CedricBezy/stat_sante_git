@@ -1,119 +1,91 @@
 #---------------------------------------------------
 # Cedric Bezy
-# 22 / 01 / 2018
+# 25 / 01 / 2018
 # Projet Stat Sante
 #---------------------------------------------------
 
-##==================================================
-# Package
-##==================================================
 rm(list = ls())
-
-library(dplyr)
-library(tibble)
-library(scales)
+load('stat_sante_git/data/couples_init.RData')
 
 ##==================================================
-# palette_enfant
-##==================================================
-
-brewer_pal(palette = "Greens", direction = 1)(9)
-# [1] "#F7FCF5" "#E5F5E0" "#C7E9C0" "#A1D99B" "#74C476" "#41AB5D"
-# [7] "#238B45" "#006D2C" "#00441B"
-
-palette_enfant <- c("Oui" = "#A1D99B", "Non" = "#238B45")
-
-##==================================================
-# functions
+# Functions
 ##==================================================
 
 contains_values <- function(text, vect){
     any(sapply(vect, grepl, x = text))
 }
 
-## Replace the accents
-replace_accents <- function(x){
-    if(is.character(x)){
-        x <- gsub('[éè]', 'e', x)
-        x <- gsub('[à]', 'a', x)
-        x <- gsub('[ù]', 'u', x)
-    }
-    return(x)
+count_na <- function(x){
+    sum(is.na(x))
 }
 
-##==================================================
-# Import Data
-##==================================================
+na_barplot <- function(df){
+    nb_na <- sapply(df, count_na)
+    nb_na <- nb_na[which(nb_na != 0)]
+    if(length(nb_na)){
+        barplot(nb_na, main="Number of NA")
+    }
+    return(nb_na)
+}
 
-data_couples <- read.csv(
-    'stat_sante_copy/data/couples.csv',
-    na.strings = c('.', ''),
-    stringsAsFactors = FALSE
-)
-class(data_couples$patho_h)
+##================================================================
+# Valeurs manquantes
+##================================================================
+##-----------------------------------.
+# Bar_Plot
+##-----------------------------------.
 
-couples <- data_couples %>%
+na_barplot(couples_init)
+
+##-----------------------------------.
+# Data 
+##-----------------------------------.
+
+nb_na_rows <- apply(couples_init, 1, count_na) - 1
+
+df_for_selection <- couples_init %>%
+    dplyr::select(id, enfant, contains("_h"), contains("_f")) %>%
+    tibble::add_column(nb_na = nb_na_rows) %>%
     dplyr::mutate(
-        ## Encodage
-        patho_h = replace_accents(patho_h),
-        patho_f = replace_accents(patho_f),
-        traitement = replace_accents(traitement)
+        nb_na_f = (is.na(ct_f) + is.na(bh_f) + is.na(patho_f)),
+        ok_diplome_f = !is.na(diplome_f),
+        ok_bilan_f = (is.na(ct_f) + is.na(bh_f) + is.na(patho_f)) <= 2,
+        ok_diplome_h = !is.na(diplome_h),
+        ok_bmi_h = !is.na(bmi_h) & bmi_h > 15 & bmi_h < 45
     )
-unique(couples$patho_h)
 
+##================================================================.
+# Filtres
+##================================================================.
 
-couples <- couples %>%
-    dplyr::mutate(
-        ## Relevel
-        enfant = factor(enfant,
-                        levels = c(1, 0),
-                        labels = c("Oui", "Non")),
-        
-        # format date
-        dconsultation = as.Date(dconsultation, format = '%d/%m/%Y'),
-        dconception = as.Date(dconception, format = '%d/%m/%Y'),
-        ddn = as.Date(ddn, format = '%d/%m/%Y'),
-        
-        # diplome
-        diplome_h = ordered(diplome_h,
-                            levels = c('Bac-', 'Bac', 'Bac+'),
-                            labels = c('Bac--', 'Bac', 'Bac++')),
-        diplome_f = ordered(diplome_f,
-                            levels = c('Bac-', 'Bac', 'Bac+'),
-                            labels = c('Bac--', 'Bac', 'Bac++')),
-        
-        spermo = ordered(spermo,
-                         levels = c('normal', 'anormal', 'azoo')),
-        cryptorchidie = ordered(cryptorchidie,
-                                levels = c('Oui', 'Non')),
-        bh_f = ordered(bh_f,
-                       levels = c('normal', 'anormal')),
-        ct_f = factor(
-            ct_f,
-            levels = c("ovulation", "dysovulation", "anovulation")
-        ),
-        fecondite = ordered(
-            fecondite,
-            levels = c('primaire', 'secondaire')
-        ),
-        traitement = factor(
-            traitement,
-            levels = c("ICSI", "IAC", "FIV", "IAD", "Medical", "Aucun")
-        )
-    ) %>%
+couples <- couples_init %>%
     dplyr::filter(
-        !is.na(diplome_h)
+        !is.na(bmi_h) & between(bmi_h, 15, 45),
+        !is.na(diplome_h),
+        !is.na(age_f)
     )
 
-##==================================================
-# Duree Infertilite
-##==================================================
+##-----------------------------------.
+# Bar_Plot
+##-----------------------------------.
+
+na_barplot(couples)
+
+##================================================================.
+# Creation de variables
+##================================================================.
+##-----------------------------------.
+# Difference age
+##-----------------------------------.
 
 diff_age <- couples$age_h - couples$age_f
 
-couples <- couples %>% add_column(diff_age, .after = "fecondite")
+couples <- couples %>% 
+    tibble::add_column(diff_age, .after = "fecondite")
 
-
+##-----------------------------------.
+# Duree Infertilite
+##-----------------------------------.
 duree_infertilite_class <- with(couples, {
     cut(duree_infertilite,
         breaks = c(0, 24, max(duree_infertilite, na.rm = TRUE) + 1),
@@ -125,7 +97,10 @@ duree_infertilite_class <- with(couples, {
 })
 couples <- couples %>% add_column(duree_infertilite_class, .after = "duree_infertilite")
 
+##-----------------------------------.
 # BMI
+##-----------------------------------.
+
 # <16 : Anorexie ; 
 # 16 < Maigreur < 18,5 ;
 # 18,5< normal < 25 ;
@@ -146,9 +121,9 @@ couples <- couples %>% add_column(bmi_h_class, .after = "bmi_h")
 
 
 
-##==================================================
+##-----------------------------------.
 # Pathologie Homme
-##==================================================
+##-----------------------------------.
 
 patho_h <- couples$patho_h
 patho_h <- gsub(" *, *", ",", patho_h)
@@ -196,9 +171,6 @@ patho_h_regroup = ordered(
 table(patho_h_regroup)
 
 
-
-
-
 # patho_h_chimio <- factor(
 #     sapply(patho_h,
 #            contains_values,
@@ -237,9 +209,9 @@ couples <- couples %>%
         .after = "patho_h"
     )
 
-##==================================================
+##-----------------------------------.
 # Pathologie Femme
-##==================================================
+##-----------------------------------.
 
 patho_f <- couples$patho_f
 patho_f <- gsub(" *, *", ",", patho_f)
@@ -301,16 +273,42 @@ couples <- couples %>%
         .after = "patho_f"
     )
 
-##==================================================
+
+##================================================================.
+# couples homme
+##================================================================.
+
+couples_hommes <- couples %>%
+    dplyr::select(id, enfant, contains("_h"), spermo, cryptorchidie,
+                  fecondite, duree_infertilite, duree_infertilite_class, traitement)
+
+na_barplot(couples_hommes)
+
+couples_femmes <- couples %>%
+    dplyr::select(id, enfant, contains("_f"),
+                  fecondite, duree_infertilite, duree_infertilite_class, traitement) %>%
+    dplyr::filter(!is.na(diplome_f),
+                  (is.na(bh_f) + is.na(ct_f) + is.na(patho_f)) < 2)
+
+na_barplot(couples_femmes)
+
+##================================================================.
 # Save
-##==================================================
+##================================================================.
 
 summary(couples)
 sapply(couples, class)
 
-save(couples, file = 'stat_sante_copy/data/couples.RData')
-save(couples, file = 'stat_sante_git/data/couples.RData')
-
-save(palette_enfant, file = 'stat_sante_copy/data/palette_enfant.RData')
-save(palette_enfant, file = 'stat_sante_git/data/palette_enfant.RData')
-
+if(readline("Remove data (y/n): ")%in% c("y", "1")){
+    save(couples, file = 'stat_sante_copy/data/couples.RData')
+    save(couples, file = 'stat_sante_git/data/couples.RData')
+    
+    save(couples_hommes, file = 'stat_sante_copy/data/couples_hommes.RData')
+    save(couples_hommes, file = 'stat_sante_git/data/couples_hommes.RData')
+    
+    save(couples_femmes, file = 'stat_sante_copy/data/couples_femmes.RData')
+    save(couples_femmes, file = 'stat_sante_git/data/couples_femmes.RData')
+    message("Substitution of data : done")
+}else{
+    message("No substitution of data")
+}
