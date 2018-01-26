@@ -5,7 +5,14 @@
 #---------------------------------------------------
 
 rm(list = ls())
+
+library(dplyr)
+library(tibble)
+
 load('stat_sante_git/data/couples_init.RData')
+
+
+
 
 ##==================================================
 # Functions
@@ -28,6 +35,11 @@ na_barplot <- function(df){
     return(nb_na)
 }
 
+strfind <- function(x, vect, xsep = ";"){
+    return(any(strsplit(x, split = xsep)[[1]] %in% vect))
+}
+
+
 ##================================================================
 # Valeurs manquantes
 ##================================================================
@@ -38,25 +50,8 @@ na_barplot <- function(df){
 na_barplot(couples_init)
 
 ##-----------------------------------.
-# Data 
+# Filter
 ##-----------------------------------.
-
-nb_na_rows <- apply(couples_init, 1, count_na) - 1
-
-df_for_selection <- couples_init %>%
-    dplyr::select(id, enfant, contains("_h"), contains("_f")) %>%
-    tibble::add_column(nb_na = nb_na_rows) %>%
-    dplyr::mutate(
-        nb_na_f = (is.na(ct_f) + is.na(bh_f) + is.na(patho_f)),
-        ok_diplome_f = !is.na(diplome_f),
-        ok_bilan_f = (is.na(ct_f) + is.na(bh_f) + is.na(patho_f)) <= 2,
-        ok_diplome_h = !is.na(diplome_h),
-        ok_bmi_h = !is.na(bmi_h) & bmi_h > 15 & bmi_h < 45
-    )
-
-##================================================================.
-# Filtres
-##================================================================.
 
 couples <- couples_init %>%
     dplyr::filter(
@@ -65,10 +60,7 @@ couples <- couples_init %>%
         !is.na(age_f)
     )
 
-##-----------------------------------.
-# Bar_Plot
-##-----------------------------------.
-
+# barplot
 na_barplot(couples)
 
 ##================================================================.
@@ -128,10 +120,10 @@ couples <- couples %>% add_column(bmi_h_class, .after = "bmi_h")
 patho_h <- couples$patho_h
 patho_h <- gsub(" *, *", ",", patho_h)
 patho_h <- gsub(" +", "_", patho_h)
-patho_h <- gsub(",", ", ", patho_h)
+patho_h <- gsub(",", ";", patho_h)
 
 
-all_patho_h <- unique(unlist(strsplit(patho_h, ", ")))
+all_patho_h <- table(unlist(strsplit(patho_h, ";")))
 all_patho_h
 
 # [1] "non"                     "chimiotherapie"                     
@@ -141,9 +133,34 @@ all_patho_h
 # [9] "cancer_testis"           "sarcome"                            
 # [11] "neurologique" 
 
+table(couples_init$patho_h)
+# autre 
+# 227 
+# cancer testis , chimiotherapie 
+# 2 
+# chimiotherapie 
+# 5 
+# chimiotherapie , radiotherapie 
+# 2 
+# diabete 
+# 7 
+# hodgkin , chimiotherapie , radiotherapie 
+# 1 
+# neurologique 
+# 1 
+# non 
+# 842 
+# pathologies respiratoire chroniques 
+# 9 
+# sarcome , chimiotherapie 
+# 1 
+# sinusites chroniques 
+# 33 
+# sinusites chroniques , pathologies respiratoire chroniques 
+# 1 
 
-# Pathologie
 
+# Chimio
 v_chimio <- c("chimiotherapie",
               "cancer_testis",
               "radiotherapie",
@@ -161,43 +178,27 @@ patho_h_bin <- ordered(patho_h != 'non',
                        levels = c(TRUE, FALSE),
                        labels = c(1, 0))
 
+x <- patho_h[832]
+vect <- v_chimio
 # Chimiotherapie
 patho_h_regroup = ordered(
-    ifelse(patho_h == "non", "non",
-           ifelse(patho_h %in% v_chimio, "chimio",
-                  ifelse(patho_h %in% v_chronic, "chronic", "autre"))),
+    ifelse(
+        patho_h == "non",
+        "non",
+        ifelse(
+            sapply(patho_h, strfind, vect = v_chimio, xsep = ";"),
+            "chimio",
+            ifelse(
+                sapply(patho_h, strfind, vect = v_chronic, xsep = ";"),
+                "chronic",
+                "autre"
+            )
+        )
+    ),
     levels = c("chimio", "chronic", "autre", "non")
 )
 table(patho_h_regroup)
 
-
-# patho_h_chimio <- factor(
-#     sapply(patho_h,
-#            contains_values,
-#            vect = v_chimio,
-#            USE.NAMES = FALSE),
-#     levels = c(TRUE, FALSE),
-#     labels = c(1, 0)
-# )
-# 
-# 
-# patho_h_chronic <- factor(
-#     sapply(patho_h,
-#            contains_values,
-#            vect = v_chronic,
-#            USE.NAMES = FALSE),
-#     levels = c(TRUE, FALSE),
-#     labels = c(1, 0)
-# )
-# 
-# patho_h_autre <- factor(
-#     sapply(patho_h,
-#            contains_values,
-#            vect = v_autre,
-#            USE.NAMES = FALSE),
-#     levels = c(TRUE, FALSE),
-#     labels = c(1, 0)
-# )
 
 couples <- couples %>%
     dplyr::mutate(
@@ -252,17 +253,6 @@ patho_f_regroup <- ordered(
 summary(patho_f_regroup)
 
 
-
-# patho_f_endometriose <- factor(
-#     !is.na(patho_f) & patho_f == "endometriose",
-#     levels = c(TRUE, FALSE),
-#     labels = c(1, 0)
-# )
-# 
-# patho_f_tubaire <- factor(grepl("tubaire", patho_f),
-#                           levels = c(TRUE, FALSE),
-#                           labels = c(1, 0))
-
 couples <- couples %>%
     dplyr::mutate(
         patho_f = patho_f
@@ -273,9 +263,49 @@ couples <- couples %>%
         .after = "patho_f"
     )
 
+##-----------------------------------.
+# Bilan Femme
+##-----------------------------------.
+
+df_bilan <- couples %>%
+    dplyr::select(id, enfant, bh_f, ct_f, patho_f)
+
+
+nb_na_bilan_f <- with(couples, is.na(bh_f) + is.na(ct_f) + is.na(patho_f))
+
+complet_f = (nb_na_bilan_f == 0)
+
+
+bilan_f <- with(couples, {
+    factor(
+        ifelse(
+            test = (nb_na_bilan_f == 3),
+            yes = NA,
+            no = ifelse(
+                test = (is.na(bh_f) | bh_f == "normal") &
+                    (is.na(ct_f) | ct_f == "ovulation") &
+                    (is.na(patho_f) | patho_f == "non"),
+                yes = 0,
+                no = 1
+            )
+        ),        
+        levels = c(1, 0),
+        labels = c("dysfonc", "normal")
+    )
+})
+
+
+## ADD TO couples
+
+couples <- couples %>%
+    tibble::add_column(
+        bilan_f = bilan_f,
+        complet_f = complet_f,
+        .before = "bh_f"
+    )
 
 ##================================================================.
-# couples homme
+# couples homme et couple femme
 ##================================================================.
 
 couples_hommes <- couples %>%
@@ -286,9 +316,7 @@ na_barplot(couples_hommes)
 
 couples_femmes <- couples %>%
     dplyr::select(id, enfant, contains("_f"),
-                  fecondite, duree_infertilite, duree_infertilite_class, traitement) %>%
-    dplyr::filter(!is.na(diplome_f),
-                  (is.na(bh_f) + is.na(ct_f) + is.na(patho_f)) < 2)
+                  fecondite, traitement)
 
 na_barplot(couples_femmes)
 

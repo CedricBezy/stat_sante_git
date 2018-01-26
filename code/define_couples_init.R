@@ -14,16 +14,6 @@ library(tibble)
 library(scales)
 
 ##==================================================
-# palette_enfant
-##==================================================
-
-brewer_pal(palette = "Greens", direction = 1)(9)
-# [1] "#F7FCF5" "#E5F5E0" "#C7E9C0" "#A1D99B" "#74C476" "#41AB5D"
-# [7] "#238B45" "#006D2C" "#00441B"
-
-palette_enfant <- c("Oui" = "#A1D99B", "Non" = "#238B45")
-
-##==================================================
 # functions
 ##==================================================
 
@@ -78,10 +68,10 @@ couples_init <- couples_init %>%
         # diplome
         diplome_h = ordered(diplome_h,
                             levels = c('Bac-', 'Bac', 'Bac+'),
-                            labels = c('Bac--', 'Bac', 'Bac++')),
+                            labels = c('Inf_Bac', 'Bac', 'Sup_Bac')),
         diplome_f = ordered(diplome_f,
                             levels = c('Bac-', 'Bac', 'Bac+'),
-                            labels = c('Bac--', 'Bac', 'Bac++')),
+                            labels = c('Inf_Bac', 'Bac', 'Sup_Bac')),
         
         spermo = ordered(spermo,
                          levels = c('normal', 'anormal', 'azoo')),
@@ -107,9 +97,6 @@ if(readline("Remove data (y/n): ")%in% c("y", "1")){
     # Couple Init
     save(couples_init, file = 'stat_sante_copy/data/couples_init.RData')
     save(couples_init, file = 'stat_sante_git/data/couples_init.RData')
-    # Palette Enfant
-    save(palette_enfant, file = 'stat_sante_copy/data/palette_enfant.RData')
-    save(palette_enfant, file = 'stat_sante_git/data/palette_enfant.RData')
     message("Substitution of data : done!")
 }else{
     message("No substitution of data")
