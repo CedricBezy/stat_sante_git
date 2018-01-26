@@ -35,42 +35,20 @@ df_summa_enfant <- couples %>%
 
 ## PLOT : couples$enfant
 
-build_bar_plot("enfant",
+build_barplot("enfant",
                data = couples,
                var_title = "Capacite pour un couple à avoir un enfant",
                palette = palette_enfant)
 
 
-
-ggplot(data = df_summa_enfant,
-       mapping = aes(enfant, pct)) +
-    geom_bar(
-        mapping = aes(fill = enfant),
-        stat = "identity",
-        col = "black"
-    ) +
-    geom_text(
-        mapping = aes(label = eff),
-        position = position_stack(vjust = 0.6)
-    ) +
-    geom_text(
-        mapping = aes(label = pct_str),
-        position = position_stack(vjust = 0.5),
-        size = 6,
-        fontface = "bold"
-    ) +
-    scale_fill_manual(values = palette_enfant) +
-    scale_y_continuous(
-        breaks = seq(0, 100, 10)
-    ) +
-    xlab("Enfant") +
-    ylab("Effectif") +
-    ggtitle("Capacité pour un couple à avoir un enfant") +
-    theme_bw(base_size = 12)
-
 ##===============================================
 # FUNCTIONS 
 ##===============================================
+
+var_name <- "ct_f"
+
+
+
 
 vect_quali <- c(
     diplome_h = "Diplome Homme",
@@ -88,7 +66,7 @@ vect_quali <- c(
 N <- length(vect_quali)
 
 plot_univar_ls <- mapply(
-    FUN = build_bar_plot,
+    FUN = build_barplot,
     var_name = names(vect_quali)[1:N],
     var_title = vect_quali[1:N],
     MoreArgs = list(
@@ -100,7 +78,7 @@ plot_univar_ls <- mapply(
 # multiplot(plotList = plot_univar_ls)
 
 plot_bivar_ls <- mapply(
-    FUN = build_bar_plot,
+    FUN = build_barplot,
     var_name = names(vect_quali)[1:N],
     var_title = vect_quali[1:N],
     MoreArgs = list(

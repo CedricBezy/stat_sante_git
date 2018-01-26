@@ -16,48 +16,51 @@ palette_enfant <- c("Oui" = "#A1D99B", "Non" = "#238B45")
 # Make Data Summary
 ##==================================================
 
-make_summary_quali <- function(name,
+make_summary_quali <- function(var_name,
                                data = couples,
-                               with_enfant = (name != "enfant"),
+                               with_enfant = (var_name != "enfant"),
                                keep_na = TRUE)
 {
+    ## Cette fonction cree une data.frame de resume de la variable donnee par var_name (string).
+    ## dans la data frame donnee en data (par defaut, couple)
+    ## Si with_enfant est TRUE, alors le resume est croisee avec la variable enfant,
+    ## sinon l'etude est univarie
+    
     df_var <- data %>%
-        dplyr::select_("enfant", name)
+        dplyr::select_("enfant", var_name)
     
     ## summarise
     df_summa_var <- df_var %>%
-        dplyr::group_by_(name) %>%
+        dplyr::group_by_(var_name) %>%
         dplyr::summarise(eff_tot = n())
     
-    if(with_enfant & (name != "enfant")){
+    if(with_enfant & (var_name != "enfant")){
         df_summa_var_enfant <- df_var %>%
-            dplyr::group_by_(name, "enfant") %>%
+            dplyr::group_by_(var_name, "enfant") %>%
             dplyr::summarise(eff = n())
         
         ## result
-        res_df <- merge(df_summa_var_enfant, df_summa_var, by = name) %>%
-            dplyr::arrange_(name, "enfant") %>%
+        res_df <- merge(df_summa_var_enfant, df_summa_var, by = var_name) %>%
+            dplyr::arrange_(var_name, "enfant") %>%
             dplyr::mutate(
-                pct = 100 * eff / eff_tot,
-                pct_str = paste(formatC(pct, digits = 1, format = "f"), "%")
+                pct = 100 * eff / eff_tot
             )
         if(!keep_na){
             res_df <- res_df %>%
-                dplyr::filter_(paste0("!is.na(", name, ")"))
+                dplyr::filter_(paste0("!is.na(", var_name, ")"))
         }
     }else{
         res_df <- df_var %>%
-            dplyr::group_by_(name) %>%
+            dplyr::group_by_(var_name) %>%
             dplyr::summarise(eff = n()) %>%
-            tibble::add_column(variable = name, .before = name)
+            tibble::add_column(variable = var_name, .before = var_name)
         if(!keep_na){
             res_df <- res_df %>%
-                dplyr::filter_(paste0("!is.na(", name, ")"))
+                dplyr::filter_(paste0("!is.na(", var_name, ")"))
         }
         res_df <- res_df %>%
             dplyr::mutate(
-                pct = 100 * eff / sum(eff),
-                pct_str = paste(formatC(pct, digits = 1, format = "f"), "%")
+                pct = 100 * eff / sum(eff)
             )
     }
     return(res_df)
@@ -67,32 +70,39 @@ make_summary_quali <- function(name,
 # Graph Univarie
 ##------------------------.
 
-.build_bar_plot_variable <- function(var_name,
-                                     data,
+.build_barplot_variable <- function(var_name,
+                                     data = couples,
                                      var_title = var_name,
                                      palette = NA,
                                      empile = FALSE,
                                      display_na = TRUE, ...)
 {
+    ## Cette fonction cree un diagramme en barre univarie sur la variable en question.
+    ## Pour cela, utilisation de ggplot2
+    
     # make data for plotting
     df_plot <- make_summary_quali(
-        name = var_name,
+        var_name = var_name,
         data = data,
         with_enfant = FALSE,
         keep_na = display_na
+    ) %>%
+        dplyr::mutate(
+            eff_pct = sprintf("%d (%s%%)", eff, formatC(pct, digits = 1, format = "f")),
+            pct_str = sprintf("%s%%", formatC(pct, digits = 1, format = "f"))
+        )
+    
+    x_labels = sprintf("%s (%d)", df_plot[[var_name]], df_plot$eff)
+    df_plot[["x_labels"]] <- ordered(
+        x_labels,
+        levels = unique(x_labels)
     )
-    # Labels
-    
-    ## Khi.square test
-    moda_eff <- sprintf("%s (%d)", df_plot[[var_name]], df_plot$eff)
-    x_labels <- unique(moda_eff)
-    
     ## Plot Title
     main_title <- var_title
     
     ## Plot
     if(empile){
-        resplot <- ggplot(mapping = aes_string("variable", "pct", fill = var_name),
+        resplot <- ggplot(mapping = aes_string("variable", "pct", fill = "x_labels"),
                           data = df_plot) +
             geom_hline(
                 mapping = aes(yintercept = 50),
@@ -102,10 +112,16 @@ make_summary_quali <- function(name,
             geom_bar(
                 stat = "identity",
                 col = "black"
+            ) +
+            geom_text(
+                mapping = aes(label = eff_pct),
+                position = position_stack(vjust = 0.5),
+                size = 5,
+                fontface = "bold"
             )
     }else{
         # Plot
-        resplot <- ggplot(mapping = aes_string(var_name, "pct", fill = var_name),
+        resplot <- ggplot(mapping = aes_string("x_labels", "pct", fill = var_name),
                           data = df_plot) +
             facet_wrap(~variable) +
             geom_bar(
@@ -116,18 +132,17 @@ make_summary_quali <- function(name,
                 mapping = aes(label = eff),
                 vjust = -1,
                 size = 4
+            ) +
+            geom_text(
+                mapping = aes(label = pct_str),
+                position = position_stack(vjust = 0.5),
+                size = 5,
+                fontface = "bold"
             )
-            
     }
     
     resplot <- resplot +
         ggtitle(main_title) +
-        geom_text(
-            mapping = aes(label = pct_str),
-            position = position_stack(vjust = 0.5),
-            size = 5,
-            fontface = "bold"
-        ) +
         scale_y_continuous(
             name = "Frequence (%)",
             breaks = seq(0, 100, 10)
@@ -141,14 +156,11 @@ make_summary_quali <- function(name,
                 values = palette
             )
     }else{
-        resplot <- resplot + if(!is.na(palette)){
+        if(!is.na(palette)){
             scale_fill_brewer(
-                labels = x_labels,
                 palette = palette,
                 direction = -1
             )
-        }else{
-            scale_fill_hue(labels = x_labels)
         }
     }
     return(resplot)
@@ -158,24 +170,28 @@ make_summary_quali <- function(name,
 # Graph Bivarie selon enfant
 ##------------------------.
 
-.build_bar_plot_enfant <- function(var_name,
-                                   data,
-                                   var_title = var_name, 
-                                   empile = TRUE,
-                                   display_na = TRUE, ...)
+.build_barplot_enfant <- function(var_name,
+                                  data = couples,
+                                  var_title = var_name, 
+                                  empile = TRUE,
+                                  display_na = TRUE, ...)
 {
-    # make data
+    # make data for plotting
     df_plot <- make_summary_quali(
-        name = var_name,
+        var_name = var_name,
         data = data,
         with_enfant = TRUE,
         keep_na = display_na
+    ) %>%
+        dplyr::mutate(
+            pct_str = sprintf("%s%%", formatC(pct, digits = 1, format = "f"))
+        )
+    # x_labels
+    x_labels = sprintf("%s (%d)", df_plot[[var_name]], df_plot$eff_tot)
+    df_plot[["x_labels"]] <- ordered(
+        x_labels,
+        levels = unique(x_labels)
     )
-    
-    # Make Moda
-    moda_eff <- sprintf("%s (%d)", df_plot[[var_name]], df_plot$eff_tot)
-    x_labels <- unique(moda_eff)
-    
     # Khi2.test
     tab_var <- table(data[[var_name]], data$enfant, useNA = "no")
     khi2_test <- chisq.test(tab_var)
@@ -191,7 +207,7 @@ make_summary_quali <- function(name,
     
     ## Plot
     if(empile){
-        resplot <- ggplot(mapping = aes_string(var_name, "pct", fill = "enfant"),
+        resplot <- ggplot(mapping = aes_string("x_labels", "pct", fill = "enfant"),
                           data = df_plot) +
             geom_hline(
                 mapping = aes(yintercept = 50),
@@ -201,30 +217,34 @@ make_summary_quali <- function(name,
             geom_bar(
                 stat = "identity",
                 col = "black"
-            ) +
-            scale_x_discrete(
-                name = var_name,
-                labels = x_labels
             )
     }else{
-        df_plot[["x_labels"]] <- factor(moda_eff, levels = unique(x_labels))
         # Plot
         resplot <- ggplot(mapping = aes_string("enfant", "pct", fill = "enfant"),
                           data = df_plot) +
             facet_wrap(~x_labels) +
             geom_bar(
                 stat = "identity",
-                col = "black"
+                col = "black",
+                position = "dodge"
             )
     }
+    
     resplot <- resplot +
-        ggtitle(main_title, sub_title) +
         geom_text(
+            mapping = aes(label = eff),
+            position = position_stack(vjust = 0.75),
+            size = 4
+        ) +
+        geom_label(
             mapping = aes(label = pct_str),
-            position = position_stack(vjust = 0.5),
+            position = position_stack(vjust = 0.50),
             size = 5,
             fontface = "bold"
-        ) +
+        )
+    
+    resplot <- resplot +
+        ggtitle(main_title, sub_title) +
         scale_y_continuous(
             name = "Frequence (%)",
             breaks = seq(0, 100, 10)
@@ -243,18 +263,22 @@ make_summary_quali <- function(name,
 # empile = FALSE,
 # display_na = TRUE
 
-build_bar_plot <- function(var_name,
+build_barplot <- function(var_name,
                            data = couples,
                            with_enfant = (var_name != "enfant"),
                            ...)
 {
+    ## Cette fonction cree un diagramme en barre univarie ou bivarie (selon "with_enfant")
+    ## sur la variable donnee par var_name
+    ## Requiert l'utilisation de ggplot2
+    
     with_enfant <- with_enfant & (var_name != "enfant")
     if(with_enfant){
-        resplot <- .build_bar_plot_enfant(var_name,
+        resplot <- .build_barplot_enfant(var_name,
                                           data = data,
                                           ... = ...)
     }else{
-        resplot <- .build_bar_plot_variable(var_name,
+        resplot <- .build_barplot_variable(var_name,
                                             data = data,
                                             ... = ...)
     }
