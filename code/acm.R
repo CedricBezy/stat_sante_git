@@ -48,6 +48,7 @@ acm <- FactoMineR::MCA(
     quanti.sup = unname(which(sapply(couples_acm, is.numeric))),
     quali.sup = 1
 )
+plot.MCA(acm, select = "cos2 0.8")
 
 
 afdm <- FactoMineR::FAMD(couples_acm, sup.var = 1)

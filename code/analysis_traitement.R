@@ -10,7 +10,3 @@ p
 
 table(couples$traitement, couples$enfant)
 chisq.test(table(couples$traitement, couples$enfant))
-
-p<-ggplot(data=couples, aes(x=factor(traitement,levels=c('ICSI','IAC','Aucun','FIV','IAD','Medical')),fill=enfant)) +
-  geom_bar(stat="count", width=0.7, position="dodge")
-p

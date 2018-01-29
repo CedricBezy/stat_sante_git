@@ -1,4 +1,8 @@
 
+library(dplyr)
+library(tibble)
+library(tidyr)
+library(purrr)
 library(ggplot2)
 library(scales)
 
@@ -15,6 +19,15 @@ palette_enfant <- c("Oui" = "#A1D99B", "Non" = "#238B45")
 ##==================================================
 # Make Data Summary
 ##==================================================
+
+count_na <- function(x){sum(is.na(x))}
+
+##==================================================
+# Make Data Summary
+##==================================================
+##----------------------
+# quali
+##----------------------
 
 make_summary_quali <- function(var_name,
                                data = couples,
@@ -121,7 +134,7 @@ make_summary_quali <- function(var_name,
             )
     }else{
         # Plot
-        resplot <- ggplot(mapping = aes_string("x_labels", "pct", fill = var_name),
+        resplot <- ggplot(mapping = aes_string(var_name, "pct", fill = var_name),
                           data = df_plot) +
             facet_wrap(~variable) +
             geom_bar(
@@ -130,12 +143,12 @@ make_summary_quali <- function(var_name,
             ) +
             geom_text(
                 mapping = aes(label = eff),
-                vjust = -1,
+                position = position_stack(vjust = 0.70),
                 size = 4
             ) +
             geom_text(
                 mapping = aes(label = pct_str),
-                position = position_stack(vjust = 0.5),
+                position = position_stack(vjust = 0.45),
                 size = 5,
                 fontface = "bold"
             )
@@ -158,6 +171,7 @@ make_summary_quali <- function(var_name,
     }else{
         if(!is.na(palette)){
             scale_fill_brewer(
+                labels = x_labels,
                 palette = palette,
                 direction = -1
             )
@@ -193,7 +207,7 @@ make_summary_quali <- function(var_name,
         levels = unique(x_labels)
     )
     # Khi2.test
-    tab_var <- table(data[[var_name]], data$enfant, useNA = "no")
+    tab_var <- table(droplevels(data[[var_name]]), data$enfant, useNA = "no")
     khi2_test <- chisq.test(tab_var)
     khi2_pvalue <- formatC(
         khi2_test$p.value,

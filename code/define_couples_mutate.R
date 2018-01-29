@@ -11,9 +11,6 @@ library(tibble)
 
 load('stat_sante_git/data/couples_init.RData')
 
-
-
-
 ##==================================================
 # Functions
 ##==================================================
@@ -100,7 +97,7 @@ couples <- couples %>% add_column(duree_infertilite_class, .after = "duree_infer
 # 30 < obese < 40 ; 
 # >40 massive
 
-bmi_h_class <- with(couples, {
+bmi_h_class_6 <- with(couples, {
     cut(bmi_h,
         breaks = c(10, 16, 18.5, 25, 30, 40, 60),
         labels = c("Anorexie", "Maigreur", "Normal", "Surpoids", "Obese", "Massive"),
@@ -109,7 +106,19 @@ bmi_h_class <- with(couples, {
         ordered_result = TRUE
     )
 })
-couples <- couples %>% add_column(bmi_h_class, .after = "bmi_h")
+
+bmi_h_class_2 <- with(couples, {
+    cut(bmi_h,
+        breaks = c(16, 25, 60),
+        labels = c("Normal", "Surpoids"),
+        include.lowest = FALSE,
+        right = TRUE,
+        ordered_result = TRUE
+    )
+})
+
+couples <- couples %>%
+    tibble::add_column(bmi_h_class_6, bmi_h_class_2, .after = "bmi_h")
 
 
 
@@ -294,9 +303,7 @@ bilan_f <- with(couples, {
     )
 })
 
-
 ## ADD TO couples
-
 couples <- couples %>%
     tibble::add_column(
         bilan_f = bilan_f,
@@ -305,12 +312,25 @@ couples <- couples %>%
     )
 
 ##================================================================.
+# remake couples
+##================================================================.
+couples <- droplevels(couples) %>%
+    tibble::add_column(
+        delta = with(couples, {
+            ifelse(!is.na(dconception),
+                   dconception - dconsultation,
+                   ddn - dconsultation)
+        }),
+        .after = "ddn"
+    )
+
+##================================================================.
 # couples homme et couple femme
 ##================================================================.
 
 couples_hommes <- couples %>%
-    dplyr::select(id, enfant, contains("_h"), spermo, cryptorchidie,
-                  fecondite, duree_infertilite, duree_infertilite_class, traitement)
+    dplyr::select(id, enfant, contains("_h"), spermo,
+                  cryptorchidie, fecondite, traitement)
 
 na_barplot(couples_hommes)
 
@@ -324,8 +344,7 @@ na_barplot(couples_femmes)
 # Save
 ##================================================================.
 
-summary(couples)
-sapply(couples, class)
+
 
 if(readline("Remove data (y/n): ")%in% c("y", "1")){
     save(couples, file = 'stat_sante_copy/data/couples.RData')
