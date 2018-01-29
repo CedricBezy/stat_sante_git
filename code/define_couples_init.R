@@ -66,24 +66,24 @@ couples_init <- couples_init %>%
         ddn = as.Date(ddn, format = '%d/%m/%Y'),
         
         # diplome
-        diplome_h = ordered(diplome_h,
+        diplome_h = factor(diplome_h,
                             levels = c('Bac-', 'Bac', 'Bac+'),
                             labels = c('Inf_Bac', 'Bac', 'Sup_Bac')),
-        diplome_f = ordered(diplome_f,
+        diplome_f = factor(diplome_f,
                             levels = c('Bac-', 'Bac', 'Bac+'),
                             labels = c('Inf_Bac', 'Bac', 'Sup_Bac')),
         
-        spermo = ordered(spermo,
-                         levels = c('normal', 'anormal', 'azoo')),
-        cryptorchidie = ordered(cryptorchidie,
+        spermo = factor(spermo,
+                        levels = c('normal', 'anormal', 'azoo')),
+        cryptorchidie = factor(cryptorchidie,
                                 levels = c('Oui', 'Non')),
-        bh_f = ordered(bh_f,
+        bh_f = factor(bh_f,
                        levels = c('normal', 'anormal')),
         ct_f = factor(
             ct_f,
             levels = c("ovulation", "dysovulation", "anovulation")
         ),
-        fecondite = ordered(
+        fecondite = factor(
             fecondite,
             levels = c('primaire', 'secondaire')
         ),

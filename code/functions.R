@@ -476,3 +476,18 @@ multiplot <- function(...,
     ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     invisible()
 }
+
+##==================================================
+# Make Train Test
+##==================================================
+
+train_test_split <- function(df, p_train = 0.75){
+    N <- nrow(df)
+    n_train <- floor(p_train * N)
+    rows_train <- sample(1:N, n_train, replace = FALSE)
+    rows_test <- setdiff(1:N, rows_train)
+    df_train <- df[rows_train,]
+    df_test <- df[rows_test,]
+    res_list <- list(train = df_train, test = df_test)
+    return(res_list)
+}
