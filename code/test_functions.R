@@ -20,6 +20,7 @@ load('stat_sante_copy/data/couples.RData')
 load('stat_sante_copy/data/couples_init.RData')
 
 source('stat_sante_copy/code/functions.R')
+source('stat_sante_copy/code/multiplot.R')
 
 ##===============================================
 # test functions
@@ -38,4 +39,28 @@ make_summary_quali(var_name, couples)
 
 .build_barplot_enfant(var_name, couples, empile = TRUE)
 .build_barplot_enfant(var_name, couples, empile = FALSE)
+
+##===============================================
+# logistique
+##===============================================
+
+hue_colors <- hue_pal()(2)
+
+reg <- glm(
+    enfant~age_h * age_f + bmi_h,
+    data = couples,
+    family = binomial(logit)
+)
+
+anova(reg, test = "Chisq")
+summary(reg)
+
+build_roc(
+    reg, col = hue_colors[1]
+)$plot
+
+
+
+
+
 

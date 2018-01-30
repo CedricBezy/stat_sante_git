@@ -373,7 +373,7 @@ train_test_split <- function(df, p_train = 0.75){
 # Make Train Test
 ##==================================================
 
-get_tab_features <- function(tab){
+confus_tab_features <- function(tab){
     if(any(dim(tab)!=c(2,2))){
         warning("Dimension incorect, Resultat réduit a une matrice 2-2")
     }
@@ -459,65 +459,3 @@ build_roc <- function(reg, col = "#F8766D",
     return(reslist)
 }
     
-    
-    
-
-
-# build_glm_rocs <- function(..., regs = list(), palette = NA){
-#     regs <- c(list(...), regs)
-#     if(is.null(names(regs))){
-#         names(regs) <- paste("GML", 1:length(regs))
-#     }
-#     rocs_ls <- sapply(output_data_glm)
-#     df_plot <- bind_rows(rocs_ls["diagnostic",]) %>%
-#         dplyr::mutate("reg_log" = factor(reg_log))
-#     df_auc <- data.frame(
-#         "reg_log" = names(regs),
-#         "auc" = unlist(rocs_ls["auc",])
-#     ) %>%
-#         dplyr::mutate(
-#             auc = round(auc, 4)
-#         )
-#     
-#     resplot <- ggplot(data = df_plot) +
-#         facet_wrap(~reg_log) +
-#         geom_line(
-#             mapping = aes(x = 1-Sp, y = Se, col = reg_log)
-#         ) +
-#         geom_ribbon(
-#             mapping = aes(x = x, ymin = x, ymax = y, fill = reg_log),
-#             alpha = 0.5
-#         ) +
-#         geom_text(
-#             mapping =  aes(label = paste("AIC = ", auc)),
-#             x = 0.60, y = 0.25,
-#             data = df_auc
-#         )
-#     
-#     resplot <- resplot +
-#         guides(col = FALSE, fill = FALSE)
-#     
-#     resplot <- resplot +
-#         geom_segment(x = 0, y = 0, xend = 1, yend = 1, col = "black") +
-#         geom_segment(x = 0, y = 0, xend = 0, yend = 1, col = "black", linetype = 3) +
-#         geom_segment(x = 0, y = 1, xend = 1, yend = 1, col = "black", linetype = 3) +
-#         geom_segment(x = 0, y = 0, xend = 1, yend = 0, col = "black", linetype = 3) +
-#         geom_segment(x = 1, y = 0, xend = 1, yend = 1, col = "black", linetype = 3)
-#     
-#     
-#     if(length(palette) >= max(2, length(regs))){
-#         resplot <- resplot + scale_fill_manual(values = palette)
-#     }else{
-#         if(!is.na(palette)){
-#             resplot <- resplot + scale_fill_brewer(
-#                 palette = palette,
-#                 direction = -1
-#             )
-#         }
-#     }
-#      +
-#         ggtitle("ROC curves")
-#     return(resplot)
-# }
-
-
