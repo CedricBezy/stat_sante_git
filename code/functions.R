@@ -5,7 +5,7 @@ library(tidyr)
 library(purrr)
 library(ggplot2)
 library(scales)
-
+library(epiDisplay)
 ##==================================================
 # palette_enfant
 ##==================================================
@@ -79,9 +79,62 @@ make_summary_quali <- function(var_name,
     return(res_df)
 }
 
-##------------------------.
-# Graph Univarie
-##------------------------.
+##----------------------
+# quali
+##----------------------
+
+make_summary_quali <- function(var_name,
+                               data = couples,
+                               with_enfant = (var_name != "enfant"),
+                               keep_na = TRUE)
+{
+    ## Cette fonction cree une data.frame de resume de la variable donnee par var_name (string).
+    ## dans la data frame donnee en data (par defaut, couple)
+    ## Si with_enfant est TRUE, alors le resume est croisee avec la variable enfant,
+    ## sinon l'etude est univarie
+    
+    df_var <- data %>%
+        dplyr::select_("enfant", var_name)
+    
+    ## summarise
+    df_summa_var <- df_var %>%
+        dplyr::group_by_(var_name) %>%
+        dplyr::summarise(eff_tot = n())
+    
+    if(with_enfant & (var_name != "enfant")){
+        df_summa_var_enfant <- df_var %>%
+            dplyr::group_by_(var_name, "enfant") %>%
+            dplyr::summarise(eff = n())
+        
+        ## result
+        res_df <- merge(df_summa_var_enfant, df_summa_var, by = var_name) %>%
+            dplyr::arrange_(var_name, "enfant") %>%
+            dplyr::mutate(
+                pct = 100 * eff / eff_tot
+            )
+        if(!keep_na){
+            res_df <- res_df %>%
+                dplyr::filter_(paste0("!is.na(", var_name, ")"))
+        }
+    }else{
+        res_df <- df_var %>%
+            dplyr::group_by_(var_name) %>%
+            dplyr::summarise(eff = n()) %>%
+            tibble::add_column(variable = var_name, .before = var_name)
+        if(!keep_na){
+            res_df <- res_df %>%
+                dplyr::filter_(paste0("!is.na(", var_name, ")"))
+        }
+        res_df <- res_df %>%
+            dplyr::mutate(
+                pct = 100 * eff / sum(eff)
+            )
+    }
+    return(res_df)
+}
+##==================================================
+# Plots
+##==================================================
 
 .build_barplot_variable <- function(var_name,
                                      data = couples,

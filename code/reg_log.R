@@ -25,16 +25,52 @@ load('stat_sante_copy/data/couples.RData')
 source('stat_sante_copy/code/functions.R')
 source('stat_sante_copy/code/multiplot.R')
 
+couples$traitement <- relevel(couples$traitement, "Aucun")
+
+levels(couples$bilan_f) <- c(levels(couples$bilan_f), "no_bilan")
+couples$bilan_f[is.na(couples$bilan_f)] <- "no_bilan"
+
 ##===============================================
 # Reg Log
 ##===============================================
 
-couples$traitement <- relevel(couples$traitement, "Aucun")
+reg_age <- glm(
+    enfant~age_h * age_f,
+    data = couples,
+    family = binomial()
+)
 
-reg_1 <- glm(
-    enfant ~ age_h + diplome_h + bmi_h + spermo + age_f + duree_infertilite + traitement,
+anova(reg_age, test = "Chisq")
+
+build_roc(reg_age)
+
+reg_infertil <- glm(
+    enfant~duree_infertilite * traitement,
+    data = couples,
+    family = binomial()
+)
+anova(reg_infertil, test = "Chisq")
+build_roc(reg_infertil)
+
+
+
+
+reg_test <- glm(
+    enfant ~ age_h * age_f + diplome_h + bmi_h_class_2 + patho_h_bin + bilan_f +
+        spermo * traitement + duree_infertilite * traitement,
     data = couples,
     family = binomial(logit)
+)
+anova(reg_test, test = "Chisq")
+summary(reg_test)
+# step
+reg_test_step <- step(reg_test)
+anova(reg_test_step, test = "Chisq")
+
+
+multiplot(
+    build_roc(reg_test, col = "#F8766D")$plot,
+    build_roc(reg_test_step, col = "#00BFC4")$plot
 )
 
 anova(reg_1, test = "Chisq")
@@ -58,10 +94,12 @@ couples_test <- samples_couples$test
 table(couples_train$enfant)
 
 reg_1_train <- glm(
-    enfant ~ age_h + diplome_h + bmi_h + spermo + age_f + duree_infertilite + traitement,
+    enfant ~ age_h * age_f + diplome_h + bmi_h_class_2 + patho_h_bin + bilan_f +
+        spermo * traitement + duree_infertilite * traitement,
     data = couples_train,
     family = binomial(logit)
 )
+anova(reg_1_train, test = "Chisq")
 
 reg_1_step <- step(reg_1_train)
 anova(reg_1_step, test = "Chisq")

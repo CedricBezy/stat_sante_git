@@ -1,7 +1,7 @@
 ##---------------------------------------
 # projet stat pour la sante
-# 22 / 01 / 2017
-# Cedric B
+# 30 / 01 / 2018
+# Cedric B, Nabil H., Riwan M.
 ##---------------------------------------
 
 ##===============================================
@@ -10,11 +10,11 @@
 rm(list = ls())
 
 # import packages
+library(purrr)
 library(dplyr)
 library(tibble)
 library(tidyr)
 library(ggplot2)
-library(purrr)
 
 # load couples
 load('stat_sante_copy/data/couples.RData')
@@ -86,7 +86,8 @@ vect_quali <- c(
     patho_f_regroup = "Anomalie Pathologie de la femme, regroupement",
     bilan_f = "Bilan Feminin",
     fecondite = "type d\'infecondite",
-    traitement = "Type de traitement de l\'infecondite"
+    traitement = "Type de traitement de l\'infecondite",
+    duree_infertilite_class = "Duree d\'infertilite par classe (Inferieur / Superieur a 2 ans)"
 )
 N <- length(vect_quali)
 
@@ -97,10 +98,10 @@ N <- length(vect_quali)
 plots_univar_ls <- mapply(
     FUN = build_barplot,
     var_name = names(vect_quali)[1:N],
-    var_title = vect_quali[1:N],
     MoreArgs = list(
         data = couples,
-        with_enfant = FALSE
+        with_enfant = FALSE,
+        var_title = "Distribution Univariee"
     ),
     SIMPLIFY = FALSE
 )
@@ -113,16 +114,18 @@ plots_univar_ls <- mapply(
 plots_bivar_ls <- mapply(
     FUN = build_barplot,
     var_name = names(vect_quali)[1:N],
-    var_title = vect_quali[1:N],
     MoreArgs = list(
         data = couples,
         empile = FALSE,
         with_enfant = TRUE,
-        display_na = FALSE
+        display_na = FALSE,
+        var_title = "Distribution croisee avec \"enfant\""
     ),
     SIMPLIFY = FALSE
 )
 # multiplot(plotList = plots_bivar_ls)
+
+
 
 ##===============================================
 # Exportation
@@ -130,12 +133,17 @@ plots_bivar_ls <- mapply(
 
 mat_plots <- rbind(plots_univar_ls, plots_bivar_ls)
 
+ok_plots <- readline("Display Plots (y/n): ")%in% c("y", "1")
+
+ok_git <- readline("Update Github (y/n): ")%in% c("y", "1")
+
 write.csv2(
     df_summary_factors,
     "stat_sante_copy/output/tabs/descr_summary_factors.csv",
     row.names = FALSE
 )
-if(readline("Update Github CSV (y/n): ")%in% c("y", "1")){
+
+if(ok_git){
     write.csv2(
         df_summary_factors,
         "stat_sante_git/output/tabs/descr_summary_factors.csv",
@@ -143,18 +151,35 @@ if(readline("Update Github CSV (y/n): ")%in% c("y", "1")){
     )
 }
 
-if(readline("Update Plots (y/n): ")%in% c("y", "1")){
-    for(j in colnames(mat_plots)){
-        print(j)
-        png(filename = sprintf("stat_sante_copy/output/plots/%s.png", j),
-            width = 800, height = 400)
-        multiplot(plotList = mat_plots[,j],
-                  col.widths = c(2, 3))
-        dev.off()
+
+for(j in colnames(mat_plots)){
+    print(j)
+    if(ok_plots){
+        multiplot(
+            plotList = mat_plots[,j],
+            row.heights = 3,
+            col.widths = c(2, 3),
+            mainTitle = sprintf("\"%s\" : %s", j, vect_quali[j])
+        )
+    }
+    png(filename = sprintf("stat_sante_copy/output/plots/%s.png", j),
+        width = 800, height = 400)
+    multiplot(
+        plotList = mat_plots[,j],
+        row.heights = 3,
+        col.widths = c(2, 3),
+        mainTitle = sprintf("\"%s\" : %s", j, vect_quali[j])
+    )
+    dev.off()
+    if(ok_git){
         png(filename = sprintf("stat_sante_git/output/plots/%s.png", j),
             width = 800, height = 400)
-        multiplot(plotList = mat_plots[,j],
-                  col.widths = c(2, 3))
+        multiplot(
+            plotList = mat_plots[,j],
+            row.heights = 3,
+            col.widths = c(2, 3),
+            mainTitle = sprintf("\"%s\" : %s", j, vect_quali[j])
+        )
         dev.off()
     }
 }

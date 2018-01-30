@@ -26,8 +26,14 @@ couples <- couples %>%
 
 couples$kaplan <- with(data = couples, Surv(delta, enfant))
 
-kaplan <- survfit(kaplan~spermo + traitement,
-                  data = couples)
 
-plot(kaplan, col = c(1:6), mark.time = TRUE)
+kaplan_1 <- survfit(kaplan~1, data = couples)
+
+
+plot(kaplan_1, col = c(1:6), mark.time = F)
+
+kaplan_spermo <- survfit(kaplan~spermo,
+                         data = couples)
+
+plot(kaplan_spermo, col = c(1:6), mark.time = F)
 
