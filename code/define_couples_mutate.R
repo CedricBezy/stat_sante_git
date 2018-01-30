@@ -9,7 +9,7 @@ rm(list = ls())
 library(dplyr)
 library(tibble)
 
-load('stat_sante_git/data/couples_init.RData')
+load('stat_sante_copy/data/couples_init.RData')
 
 ##==================================================
 # Functions
@@ -81,7 +81,7 @@ duree_infertilite_class <- with(couples, {
         labels = c("inf_24", "24_sup"),
         include.lowest = FALSE,
         right = TRUE,
-        ordered_result = TRUE
+        ordered_result = FALSE
     )
 })
 couples <- couples %>% add_column(duree_infertilite_class, .after = "duree_infertilite")
@@ -103,7 +103,7 @@ bmi_h_class_6 <- with(couples, {
         labels = c("Anorexie", "Maigreur", "Normal", "Surpoids", "Obese", "Massive"),
         include.lowest = FALSE,
         right = TRUE,
-        ordered_result = TRUE
+        ordered_result = FALSE
     )
 })
 
@@ -113,7 +113,7 @@ bmi_h_class_2 <- with(couples, {
         labels = c("Normal", "Surpoids"),
         include.lowest = FALSE,
         right = TRUE,
-        ordered_result = TRUE
+        ordered_result = FALSE
     )
 })
 
@@ -183,14 +183,14 @@ v_chronic <- c("pathologies_respiratoire_chroniques",
 v_autre <- setdiff(all_patho_h, c("non", v_chimio, v_chronic))
 
 
-patho_h_bin <- ordered(patho_h != 'non',
+patho_h_bin <- factor(patho_h != 'non',
                        levels = c(TRUE, FALSE),
                        labels = c(1, 0))
 
 x <- patho_h[832]
 vect <- v_chimio
 # Chimiotherapie
-patho_h_regroup = ordered(
+patho_h_regroup = factor(
     ifelse(
         patho_h == "non",
         "non",
@@ -237,13 +237,13 @@ table(patho_f)
 # non  pb tubaire bilateral pb tubaire unilateral 
 # 647                    14                    65
 
-patho_f_bin <- ordered(
+patho_f_bin <- factor(
     (patho_f != 'non'),
     levels = c(TRUE, FALSE),
     labels = c(1, 0)
 )
 
-patho_f_regroup <- ordered(
+patho_f_regroup <- factor(
     ifelse(
         test = is.na(patho_f),
         yes = NA,
@@ -325,36 +325,13 @@ couples <- droplevels(couples) %>%
     )
 
 ##================================================================.
-# couples homme et couple femme
-##================================================================.
-
-couples_hommes <- couples %>%
-    dplyr::select(id, enfant, contains("_h"), spermo,
-                  cryptorchidie, fecondite, traitement)
-
-na_barplot(couples_hommes)
-
-couples_femmes <- couples %>%
-    dplyr::select(id, enfant, contains("_f"),
-                  fecondite, traitement)
-
-na_barplot(couples_femmes)
-
-##================================================================.
 # Save
 ##================================================================.
 
+save(couples, file = 'stat_sante_copy/data/couples.RData')
 
-
-if(readline("Remove data (y/n): ")%in% c("y", "1")){
-    save(couples, file = 'stat_sante_copy/data/couples.RData')
+if(readline("Update Github data (y/n): ")%in% c("y", "1")){
     save(couples, file = 'stat_sante_git/data/couples.RData')
-    
-    save(couples_hommes, file = 'stat_sante_copy/data/couples_hommes.RData')
-    save(couples_hommes, file = 'stat_sante_git/data/couples_hommes.RData')
-    
-    save(couples_femmes, file = 'stat_sante_copy/data/couples_femmes.RData')
-    save(couples_femmes, file = 'stat_sante_git/data/couples_femmes.RData')
     message("Substitution of data : done")
 }else{
     message("No substitution of data")

@@ -299,183 +299,7 @@ build_barplot <- function(var_name,
     return(resplot)
 }
 
-##==================================================
-# Dimensions for viewer
-##==================================================
 
-niceDimensions <- function(n, nrow = NULL, ncol = NULL){
-    sqn <- sqrt(n)
-    chooseDims <- c(!is.null(nrow) & !is.null(ncol), 
-                    !is.null(nrow) & is.null(ncol),
-                    is.null(nrow) & !is.null(ncol),
-                    is.null(nrow) & is.null(ncol))
-    Dims <- switch(
-        which(chooseDims),
-        "1" = c(nrow, ncol),
-        "2" = c(nrow, ceiling(n / nrow)),
-        "3" = c(ceiling(n / ncol), ncol),
-        "4" = c(ceiling(n / ceiling(sqn)), ceiling(sqn))
-    )
-    return(Dims)
-}
-
-
-##================================================
-# Multiplot
-##================================================
-
-# ...       : ggplots           # (plots can be named except with a still-exist-parameter's name)
-# plotlist  : list of ggplots   # (plots can be named)
-# ncol      : number of columns
-# byrow     : TRUE / FALSE      # if list graphics is sorted by row (TRUE) or by columns (FALSE)
-# plotsTitle
-# mainTitles
-
-
-multiplot <- function(...,
-                      plotList = NULL,
-                      nrow = NULL,
-                      ncol = NULL,
-                      byrow = TRUE,
-                      row.heights = NULL,
-                      col.widths = NULL,
-                      withPlotsTitle = TRUE,
-                      mainTitle = NULL ){
-    
-    require(grid)
-    ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Make a list from the ... arguments and plotlist
-    ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Lplots <- c(list(...), plotList)
-    nb.plots <- length(Lplots)
-    
-    ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # DIMENSION OF THE LAYOUT
-    ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Dims <- niceDimensions(nb.plots, nrow, ncol)
-    NR <- Dims[1]
-    NC <- Dims[2]
-    
-    ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # MAKE THE LAYOUT PANEL
-    ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    mat_layout <- matrix( 
-        seq(1, NC * NR),
-        nrow = NR,
-        ncol = NC,
-        byrow = byrow
-    )
-    
-    # Parameters not available yet to be chosen by users
-    
-    # Display graphes
-    if(nb.plots== 1){
-        print(Lplots[[1]]) 
-    }else{
-        okMainTitle <- !is.null(mainTitle)
-        ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        ## DIMENSION LAYOUT
-        ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # hauteur de ligne
-        nrowLayout <- 2 * NR - 1
-        nbHei <- length(row.heights)
-        row.heights <- c(
-            row.heights[1:min(nbHei, NR)], 
-            if(nbHei < NR){rep(1, NR - nbHei)}
-        )
-        layout_rows <- c(3, rep(c(0.3, 3), times = NR-1))
-        seqrow <- seq(1, nrowLayout, 2)
-        layout_rows[seqrow] <- layout_rows[seqrow] * row.heights
-        
-        if(okMainTitle){
-            mt <- 1
-            margeTitle <- 1 * length(gregexpr("\n", mainTitle)[[1]])
-            layout_rows <- c(margeTitle, layout_rows)
-            nrowLayout <- nrowLayout + 1
-        }else{
-            mt <- 0
-        }
-        ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        ## largeur de colonne
-        ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        okMainLegend <- FALSE
-        ncolLayout <- NC + ifelse(okMainLegend, 1, 0)
-        nbWid <- length(col.widths)
-        col.widths <- c(col.widths[1:min(nbWid, NC)], 
-                        if(nbWid < NC){rep(1, NC - nbWid)})
-        layout_cols <- c(5 * col.widths, 
-                         if(okMainLegend){ 2 } )
-        ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set up the page
-        ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        grid.newpage()
-        pushViewport( viewport(
-            layout = grid.layout( 
-                nrow = nrowLayout, 
-                ncol = ncolLayout,
-                widths = grid::unit(layout_cols, units = "null"),
-                heights = grid::unit(layout_rows, units = "null")
-            )
-        ))
-        mainTitleSets <- bquote(bold(.(mainTitle)))
-        ## Title of the Page
-        if(okMainTitle){
-            grid.text(
-                mainTitleSets, 
-                vp = viewport(
-                    layout.pos.row = 1, 
-                    layout.pos.col = 1:ncolLayout
-                )
-            )
-        }
-        ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Make each plot, in the correct location
-        # Get the i,j matrix positions of the regions that contain this subplot
-        ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        for(i in 1:nb.plots){
-            # coordonnees Layout of the subplot
-            matchidx <- as.data.frame(
-                which(mat_layout == i, arr.ind = TRUE)
-            )
-            iPlot <- Lplots[[i]]
-            if( length(iPlot)!=0 & !(class(iPlot)[1] %in% c("logical", "NULL")) ){
-                # title of the subplot
-                if(is.na(withPlotsTitle)){
-                    iTitle <- names(Lplots)[i]
-                    iPlot <- iPlot +
-                        ggtitle(iTitle)
-                }else{
-                    if(withPlotsTitle){
-                        iPlot <- iPlot
-                    }else{
-                        iPlot <- iPlot +
-                            ggtitle(NULL)
-                    }
-                }
-                
-                ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # print the plot
-                ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                iRow <- 2 * matchidx$row - 1 + mt
-                iCol <- matchidx$col
-                print(
-                    iPlot,
-                    vp = viewport(
-                        layout.pos.row = iRow,
-                        layout.pos.col = iCol
-                    )
-                )
-            } # end if
-            ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # the ith graph is printed
-            ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        } # end for
-    } # end if
-    ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # END
-    ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    invisible()
-}
 
 ##==================================================
 # Make Train Test
@@ -491,3 +315,156 @@ train_test_split <- function(df, p_train = 0.75){
     res_list <- list(train = df_train, test = df_test)
     return(res_list)
 }
+
+##==================================================
+# Make Train Test
+##==================================================
+
+get_tab_features <- function(tab){
+    if(any(dim(tab)!=c(2,2))){
+        warning("Dimension incorect, Resultat réduit a une matrice 2-2")
+    }
+    TP <- tab[1, 1]
+    FP <- tab[1, 2]
+    FN <- tab[2, 1]
+    TN <- tab[2, 2]
+    ntot <- TP + FP + FN + TN
+    pct_error <- (FN + FP)/ntot
+    sensi <- TP / (TP + FN)
+    speci <- TN / (TN + FP)
+    res_list <- list(
+        sensibility = sensi,
+        specificity = speci,
+        error = pct_error
+    )
+    return(res_list)
+}
+
+##==================================================
+# Plotting Regression Lineaire
+##==================================================
+
+build_roc <- function(reg, col = "#F8766D",
+                      main_title = "Courbe Roc", sub_title = NULL){
+    # Roc curve
+    roc_glm <- lroc(reg, graph = FALSE)
+    # make data
+    df_plot <- as.data.frame.matrix(roc_glm$diagnostic.table) %>%
+        tibble::remove_rownames()
+    df_plot[,1] <- 1 - df_plot[,1]
+    colnames(df_plot) <- c("Sp", "Se")
+    auc <- roc_glm$auc
+    
+    # Init Plot
+    rocplot <- ggplot(data = df_plot) + 
+        ggtitle(main_title, sub_title)
+    
+    # theme
+    rocplot <- rocplot +
+        geom_segment(x = 0, y = 0, xend = 0, yend = 1, col = "black", linetype = 3) +
+        geom_segment(x = 0, y = 1, xend = 1, yend = 1, col = "black", linetype = 3) +
+        geom_segment(x = 0, y = 0, xend = 1, yend = 0, col = "black", linetype = 3) +
+        geom_segment(x = 1, y = 0, xend = 1, yend = 1, col = "black", linetype = 3) +
+        scale_x_continuous(
+            name = "1 - Specificity",
+            breaks = seq(0, 1, 0.25),
+            limits = c(0, 1)
+        ) +
+        scale_y_continuous(
+            name = "Sensibility",
+            breaks = seq(0, 1, 0.25),
+            limits = c(0, 1)
+        )
+    
+    # Layers
+    rocplot <- rocplot +
+        geom_line(
+            mapping = aes(x = 1-Sp, y = Se),
+            col = col,
+            lwd = 1
+        ) +
+        geom_ribbon(
+            mapping = aes(x = 1-Sp, ymin = 1-Sp, ymax = Se),
+            fill = col,
+            alpha = 0.5
+        ) +
+        geom_segment(x = 0, y = 0, xend = 1, yend = 1, col = "black")
+    
+    # Text
+    rocplot <- rocplot +
+        geom_text(
+            label = paste("AUC = ", round(auc, 4)),
+            x = 0.70,
+            y = 0.31,
+            size = 5
+        )
+    reslist <- list(
+        plot = rocplot,
+        data = df_plot,
+        auc = auc
+    )
+    return(reslist)
+}
+    
+    
+    
+
+
+# build_glm_rocs <- function(..., regs = list(), palette = NA){
+#     regs <- c(list(...), regs)
+#     if(is.null(names(regs))){
+#         names(regs) <- paste("GML", 1:length(regs))
+#     }
+#     rocs_ls <- sapply(output_data_glm)
+#     df_plot <- bind_rows(rocs_ls["diagnostic",]) %>%
+#         dplyr::mutate("reg_log" = factor(reg_log))
+#     df_auc <- data.frame(
+#         "reg_log" = names(regs),
+#         "auc" = unlist(rocs_ls["auc",])
+#     ) %>%
+#         dplyr::mutate(
+#             auc = round(auc, 4)
+#         )
+#     
+#     resplot <- ggplot(data = df_plot) +
+#         facet_wrap(~reg_log) +
+#         geom_line(
+#             mapping = aes(x = 1-Sp, y = Se, col = reg_log)
+#         ) +
+#         geom_ribbon(
+#             mapping = aes(x = x, ymin = x, ymax = y, fill = reg_log),
+#             alpha = 0.5
+#         ) +
+#         geom_text(
+#             mapping =  aes(label = paste("AIC = ", auc)),
+#             x = 0.60, y = 0.25,
+#             data = df_auc
+#         )
+#     
+#     resplot <- resplot +
+#         guides(col = FALSE, fill = FALSE)
+#     
+#     resplot <- resplot +
+#         geom_segment(x = 0, y = 0, xend = 1, yend = 1, col = "black") +
+#         geom_segment(x = 0, y = 0, xend = 0, yend = 1, col = "black", linetype = 3) +
+#         geom_segment(x = 0, y = 1, xend = 1, yend = 1, col = "black", linetype = 3) +
+#         geom_segment(x = 0, y = 0, xend = 1, yend = 0, col = "black", linetype = 3) +
+#         geom_segment(x = 1, y = 0, xend = 1, yend = 1, col = "black", linetype = 3)
+#     
+#     
+#     if(length(palette) >= max(2, length(regs))){
+#         resplot <- resplot + scale_fill_manual(values = palette)
+#     }else{
+#         if(!is.na(palette)){
+#             resplot <- resplot + scale_fill_brewer(
+#                 palette = palette,
+#                 direction = -1
+#             )
+#         }
+#     }
+#      +
+#         ggtitle("ROC curves")
+#     return(resplot)
+# }
+
+

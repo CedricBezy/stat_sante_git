@@ -20,6 +20,7 @@ library(purrr)
 load('stat_sante_copy/data/couples.RData')
 
 source('stat_sante_copy/code/functions.R')
+source('stat_sante_copy/code/multiplot.R')
 
 ##===============================================
 # Analysis Enfant

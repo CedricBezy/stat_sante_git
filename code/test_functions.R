@@ -25,7 +25,7 @@ source('stat_sante_copy/code/functions.R')
 # test functions
 ##===============================================
 
-var_name <- "patho_h_regroup"
+var_name <- "bmi_h_class"
 var_title <- var_name
 data <- couples
 display_na <- TRUE

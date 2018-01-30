@@ -59,7 +59,6 @@ couples_init <- couples_init %>%
         enfant = factor(enfant,
                         levels = c(1, 0),
                         labels = c("Oui", "Non")),
-        
         # format date
         dconsultation = as.Date(dconsultation, format = '%d/%m/%Y'),
         dconception = as.Date(dconception, format = '%d/%m/%Y'),
@@ -93,9 +92,10 @@ couples_init <- couples_init %>%
         )
     )
 
-if(readline("Remove data (y/n): ")%in% c("y", "1")){
+save(couples_init, file = 'stat_sante_copy/data/couples_init.RData')
+
+if(readline("Update Github data (y/n): ")%in% c("y", "1")){
     # Couple Init
-    save(couples_init, file = 'stat_sante_copy/data/couples_init.RData')
     save(couples_init, file = 'stat_sante_git/data/couples_init.RData')
     message("Substitution of data : done!")
 }else{
