@@ -53,7 +53,12 @@ anova(reg_infertil, test = "Chisq")
 build_roc(reg_infertil)
 
 
-
+reg_test <- glm(
+    enfant ~ age_h * age_f + diplome_h + bmi_h_class_2 + patho_h_bin + bilan_f +
+        spermo * traitement + duree_infertilite * traitement,
+    data = dplyr::filter(couples, bilan_f != 'no_bilan') %>% droplevels(),
+    family = binomial(logit)
+)
 
 reg_test <- glm(
     enfant ~ age_h * age_f + diplome_h + bmi_h_class_2 + patho_h_bin + bilan_f +
