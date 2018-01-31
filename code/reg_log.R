@@ -52,13 +52,16 @@ reg_infertil <- glm(
 anova(reg_infertil, test = "Chisq")
 build_roc(reg_infertil)
 
-
+couples_bis <- dplyr::filter(couples, bilan_f != 'no_bilan') %>% droplevels()
 reg_test <- glm(
     enfant ~ age_h * age_f + diplome_h + bmi_h_class_2 + patho_h_bin + bilan_f +
         spermo * traitement + duree_infertilite * traitement,
-    data = dplyr::filter(couples, bilan_f != 'no_bilan') %>% droplevels(),
+    data = couples_bis,
     family = binomial(logit)
 )
+reg_test_step <- step(reg_test)
+anova(reg_test_step, test = "Chisq")
+
 
 reg_test <- glm(
     enfant ~ age_h * age_f + diplome_h + bmi_h_class_2 + patho_h_bin + bilan_f +
