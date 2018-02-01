@@ -8,15 +8,19 @@ library(broom)
 load("/Users/nabil/Desktop/BESante/couples.RData")
 couples.bis <- couples[,-1]
 couples.bis$traitement <- relevel(couples.bis$traitement, "Aucun")
+couples.bis$enfant <- relevel(couples.bis$enfant, "Non")
 
 ####
 #                        Construction du model 
 #  Sans valeur manquntes
 couples.bis <- subset(couples.bis, !is.na(couples.bis$bilan_f))
+# Modele complet
+reg <- glm(enfant~age_h+age_f + diplome_h + bmi_h_class_2 + spermo + cryptorchidie + fecondite +bilan_f+duree_infertilite_class+traitement,data = couples,family = binomial())
+anova(reg, test="Chisq")
 # modèle trivial réduit à la constante
 str_constant <- "~ 1"
 # modèle complet incluant toutes les explicatives potentielles
-str_all <- "~ age_h+age_f + diplome_h + bmi_h_class_2 + cryptorchidie + fecondite +bilan_f+duree_infertilite_class+traitement"
+str_all <- "~ age_h+age_f + diplome_h + bmi_h_class_2 + cryptorchidie +spermo +fecondite +bilan_f+duree_infertilite_class+traitement"
 require(MASS)
 
 # Stepwise
@@ -45,13 +49,16 @@ build_roc(modele.stepwise)
 
 ####
 #                        Construction du model 
+# Le modele global
+reg <- glm(enfant~age_h+age_f + diplome_h + bmi_h_class_2 + spermo + cryptorchidie + fecondite +bilan_f+duree_infertilite_class+traitement,data = couples,family = binomial())
+anova(reg, test="Chisq")
 #  En considerant les NA's comme une classe
 levels(couples.bis$bilan_f) <- c(levels(couples.bis$bilan_f),"pas_Bilan")
 couples.bis$bilan_f[is.na(couples.bis$bilan_f)] <- "pas_Bilan"
 # modèle trivial réduit à la constante
 str_constant <- "~ 1"
 # modèle complet incluant toutes les explicatives potentielles
-str_all <- "~ age_h+age_f + diplome_h + bmi_h_class_2 + cryptorchidie + fecondite +bilan_f+duree_infertilite_class+traitement"
+str_all <- "~ age_h+age_f + diplome_h + bmi_h_class_2 + spermo + cryptorchidie + fecondite +bilan_f+duree_infertilite_class+traitement"
 require(MASS)
 
 # Stepwise

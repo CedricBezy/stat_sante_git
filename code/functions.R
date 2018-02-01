@@ -446,7 +446,7 @@ build_roc <- function(reg, col = "#F8766D",
     # Text
     rocplot <- rocplot +
         geom_text(
-            label = paste("AUC = ", round(auc, 4)),
+            label = paste("AUC = ", round(auc, 3)),
             x = 0.70,
             y = 0.31,
             size = 5
