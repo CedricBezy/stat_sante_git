@@ -183,9 +183,9 @@ v_chronic <- c("pathologies_respiratoire_chroniques",
 v_autre <- setdiff(all_patho_h, c("non", v_chimio, v_chronic))
 
 
-patho_h_bin <- factor(patho_h != 'non',
-                       levels = c(TRUE, FALSE),
-                       labels = c(1, 0))
+patho_h_bin <- factor(patho_h == 'non',
+                       levels = c(FALSE, TRUE),
+                       labels = c(0, 1))
 
 x <- patho_h[832]
 vect <- v_chimio
@@ -204,7 +204,7 @@ patho_h_regroup = factor(
             )
         )
     ),
-    levels = c("chimio", "chronic", "autre", "non")
+    levels = c("non", "chimio", "chronic", "autre")
 )
 table(patho_h_regroup)
 
@@ -238,9 +238,9 @@ table(patho_f)
 # 647                    14                    65
 
 patho_f_bin <- factor(
-    (patho_f != 'non'),
-    levels = c(TRUE, FALSE),
-    labels = c(1, 0)
+    (patho_f == 'non'),
+    levels = c(FALSE, TRUE),
+    labels = c(0, 1)
 )
 
 patho_f_regroup <- factor(
@@ -257,7 +257,7 @@ patho_f_regroup <- factor(
             )
         )
     ),
-    levels = c("endometriose", "tubaire", "autre", "non")
+    levels = c("non", "endometriose", "tubaire", "autre")
 )
 summary(patho_f_regroup)
 
@@ -314,6 +314,7 @@ couples <- couples %>%
 ##================================================================.
 # remake couples
 ##================================================================.
+
 couples <- droplevels(couples) %>%
     tibble::add_column(
         delta = with(couples, {

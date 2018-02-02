@@ -22,6 +22,17 @@ palette_enfant <- c("Oui" = "#A1D99B", "Non" = "#238B45")
 
 count_na <- function(x){sum(is.na(x))}
 
+format_pvalue <- function(p, digits = 3){
+    formatC(p, digits = digits, format = ifelse(p < 0.001, 'e', 'f'))
+}
+
+
+
+chisq.pvalue <- function(...){
+    chisq.test(...)$p.value
+}
+
+
 ##==================================================
 # Make Data Summary
 ##==================================================
@@ -446,7 +457,7 @@ build_roc <- function(reg, col = "#F8766D",
     # Text
     rocplot <- rocplot +
         geom_text(
-            label = paste("AUC = ", round(auc, 3)),
+            label = paste("AUC = ", round(auc, 4)),
             x = 0.70,
             y = 0.31,
             size = 5

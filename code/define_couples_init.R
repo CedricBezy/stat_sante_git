@@ -57,8 +57,8 @@ couples_init <- couples_init %>%
     dplyr::mutate(
         ## Relevel
         enfant = factor(enfant,
-                        levels = c(1, 0),
-                        labels = c("Oui", "Non")),
+                        levels = c(0, 1),
+                        labels = c("Non", "Oui")),
         # format date
         dconsultation = as.Date(dconsultation, format = '%d/%m/%Y'),
         dconception = as.Date(dconception, format = '%d/%m/%Y'),
