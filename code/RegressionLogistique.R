@@ -1,9 +1,9 @@
-library(ggplot2)
 library(effects)
 library(dplyr)
 library(tidyr)
 library(questionr)
 library(broom)
+library(ggplot2)
 
 load("/Users/nabil/Desktop/BESante/couples.RData")
 couples.bis <- couples[,-1]
@@ -43,9 +43,15 @@ odds.ratio(modele.stepwise)
 plot(allEffects(modele.stepwise))
 # Courbe de ROC
 build_roc(modele.stepwise)
-
-
-
+attach(couples.bis)
+# Histo Proba
+predict(modele.stepwise,type="response")
+prob.pred = predict(modele.stepwise, type="response")
+par(mfrow=c(1,2))
+hist(prob.pred[enfant=="Oui"], probability=T, col='light blue')
+lines(density(prob.pred[enfant=='Oui']),col='red',lwd=3)
+hist(prob.pred[enfant=='Non'], probability=T, col='light blue')
+lines(density(prob.pred[enfant=='Non']),col='red',lwd=3)
 
 ####
 #                        Construction du model 
@@ -59,7 +65,6 @@ couples.bis$bilan_f[is.na(couples.bis$bilan_f)] <- "pas_Bilan"
 str_constant <- "~ 1"
 # modèle complet incluant toutes les explicatives potentielles
 str_all <- "~ age_h+age_f + diplome_h + bmi_h_class_2 + spermo + cryptorchidie + fecondite +bilan_f+duree_infertilite_class+traitement"
-require(MASS)
 
 # Stepwise
 modele <- glm(enfant ~ 1, data =couples.bis , family = binomial)
@@ -81,4 +86,11 @@ odds.ratio(modele.stepwise)
 plot(allEffects(modele.stepwise))
 # Courbe de ROC
 build_roc(modele.stepwise)
-
+# Histo Proba
+predict(modele.stepwise,type="response")
+prob.pred = predict(modele.stepwise, type="response")
+par(mfrow=c(1,2))
+hist(prob.pred[enfant=="Oui"], probability=T, col='light blue')
+lines(density(prob.pred[enfant=='Oui']),col='red',lwd=3)
+hist(prob.pred[enfant=='Non'], probability=T, col='light blue')
+lines(density(prob.pred[enfant=='Non']),col='red',lwd=3)
